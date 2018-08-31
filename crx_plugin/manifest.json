@@ -1,0 +1,36 @@
+
+{  
+    "name": "lanhu_alayout",  
+    "version": "0.0.1",  
+    "manifest_version": 2,
+    "description": "lanhu to alayout.json",  
+
+    "page_action":{
+      "default_icon": "icon.png" ,
+      "default_title": "LanhuToALayout",
+      "default_popup": "popup.html"
+    },
+
+    "permissions":
+    [
+        "contextMenus",
+        "declarativeContent",
+        "tabs",
+        "activeTab",
+        "notifications",
+        "webRequest",
+        "webRequestBlocking",
+        "storage",
+        "http://*/*",
+        "https://*/*"
+    ],
+
+    "background":{
+        "scripts": ["background.js"]
+    }, 
+
+    "content_scripts":[{
+		"matches":["https://lanhuapp.com/web/*"],
+		"js":["axios-0.18.0.min.js", "lanhu_aplayout_plugin.js"]
+	}]
+  }
