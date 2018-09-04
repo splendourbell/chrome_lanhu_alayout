@@ -537,7 +537,9 @@ function startRun() {
                                         - (textView.layout_height).toFloatValue()
                                         - (textView.layout_marginTop).toFloatValue()
                                     ).toDimension();
-                    
+                    let tempBg = view.background;
+                    delete view.background;
+                    view.background = tempBg;
                     delete view.children;
                 }
             }
