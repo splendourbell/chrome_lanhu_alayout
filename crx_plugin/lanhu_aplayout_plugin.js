@@ -56,10 +56,10 @@ function startRun() {
             var queryArray = hashstr.split('&');
             var queryObj = {};
             queryArray.forEach( e => {
-                var arr = e.split('='); 
+                var arr = e.split('=');
                 queryObj[arr[0]]=arr[1];
             });
-            
+
             return `https://lanhuapp.com/api/project/image?image_id=${queryObj.image_id}&project_id=${queryObj.project_id}`;
         }
     }
@@ -163,6 +163,8 @@ function startRun() {
         {
             viewObj.layout_height = info.height.toDimension();
         }
+        viewObj.layout_width = (viewObj.layout_width || 0).toDimension();
+        viewObj.layout_height = (viewObj.layout_height || 0).toDimension();
     }
 
     function getBackground(info)
@@ -250,24 +252,24 @@ function startRun() {
                 }
             }
         }
-        else 
+        else
         {
             let corners = {
                 "class": "corners"
             }
-            if(topLeft.toFloatValue() > 0) 
+            if(topLeft.toFloatValue() > 0)
             {
                 corners.topLeftRadius = topLeft;
             }
-            if(topRight.toFloatValue() > 0) 
+            if(topRight.toFloatValue() > 0)
             {
                 corners.topRightRadius = topRight;
             }
-            if(bottomRight.toFloatValue() > 0) 
+            if(bottomRight.toFloatValue() > 0)
             {
                 corners.bottomRightRadius = bottomRight;
             }
-            if(bottomLeft.toFloatValue() > 0) 
+            if(bottomLeft.toFloatValue() > 0)
             {
                 corners.bottomLeftRadius = bottomLeft;
             }
@@ -317,7 +319,7 @@ function startRun() {
                             let y1 = gradient.from.y.toFloatValue();
                             let x2 = gradient.to.x.toFloatValue();
                             let y2 = gradient.to.y.toFloatValue();
-                            
+
                             let radian = Math.atan(Math.abs((y2 - y1) / (x2 - x1))) * 180 / Math.PI;
                             var angle = 0;
 
@@ -464,6 +466,7 @@ function startRun() {
     function netestViews(viewArray)
     {
         let newViewArray = viewArray.slice(0);
+        console.log(JSON.stringify(newViewArray));
         newViewArray = newViewArray.sort((viewA, viewB) => {
             return viewA.layout_width.toFloatValue() * viewA.layout_height.toFloatValue() - viewB.layout_width.toFloatValue()
                 * viewB.layout_height.toFloatValue();
@@ -498,12 +501,12 @@ function startRun() {
 
     function megerTextViewBackground(viewArray)
     {
-        for(var i=0; i<viewArray.length; i++) 
+        for(var i=0; i<viewArray.length; i++)
         {
             let view = viewArray[i];
             if(view.class == 'RelativeLayout'
-                && view.children 
-                && view.children.length == 1) 
+                && view.children
+                && view.children.length == 1)
             {
                 var textView = view.children[0];
                 if(textView.class == 'TextView' && !textView.background)
@@ -548,7 +551,7 @@ function startRun() {
 
     function containsView(bigView, smallView)
     {
-        if(bigView.class == "ViewGroup" 
+        if(bigView.class == "ViewGroup"
         || bigView.class == "RelativeLayout"
         || bigView.class == "LinearLayout"
         || bigView.class == "FlowLayout") {
@@ -561,8 +564,8 @@ function startRun() {
             var s_t = smallView.layout_marginTop.toFloatValue();
             var s_r = (smallView.layout_width.toFloatValue() + s_l).toFloatValue();
             var s_b = (smallView.layout_height.toFloatValue() + s_t).toFloatValue();
-            
-            if(b_l <= s_l && b_t <= s_t 
+
+            if(b_l <= s_l && b_t <= s_t
                 && b_r >= s_r && b_b >= s_b )
             {
                 return true;
@@ -598,4 +601,3 @@ function getLayoutedData()
     return document.MyLayoutData;
 }
 console.log("plugin alayout run");
-
