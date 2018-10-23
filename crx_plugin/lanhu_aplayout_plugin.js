@@ -47,7 +47,8 @@ Number.prototype.toDimension = function () {
 //     }, 200);
 // }
 
-function startRun() {
+function startRun(config) {
+    //拼接数据地址
     function getInfoUrl()
     {
         var hashstr = window.location.hash;
@@ -64,6 +65,7 @@ function startRun() {
         }
     }
 
+    //请求真实的布局原始数据
     function getLayoutData()
     {
         document.MyLayoutData = null;
@@ -78,14 +80,15 @@ function startRun() {
                     axios.get(url).then(function (response) {
                         genlayout(response.data);
                     }).catch(function (error) {
-                    alert(error);
+                        alert(error);
                     });
                 }).catch(function (error) {
-                alert(error);
+                    alert(error);
                 });
         }
     }
 
+    //解析布局数据，生成view
     function genlayout(jsonobject)
     {
         let infos = jsonobject.info;
@@ -310,9 +313,9 @@ function startRun() {
                     if('linear' == gradient.type)
                     {
                         let colorStops = gradient.colorStops;
-                        if(Array.isArray(colorStops) && colorStops.length == 2)
+                        if(Array.isArray(colorStops) && colorStops.length > 0)
                         {
-                            colorObj.startColor = toHexColor(colorStops[1].color);
+                            colorObj.startColor = toHexColor(colorStops[colorStops.length-1].color);
                             colorObj.endColor = toHexColor(colorStops[0].color);
 
                             let x1 = gradient.from.x.toFloatValue();
@@ -462,7 +465,7 @@ function startRun() {
         }
     }
 
-
+    //通过生成的绝对坐标，按控制大小判断生成父子关系
     function netestViews(viewArray)
     {
         let newViewArray = viewArray.slice(0);
@@ -499,26 +502,24 @@ function startRun() {
         })
     }
 
+    //当前为RelativeLayout时(默认普通控制均生成为RelativeLayout)，
+    //如果子控制只有一个TextView控件
+    //便将两个控制合并，父控件当作Text的背景处理
     function megerTextViewBackground(viewArray)
     {
         for(var i=0; i<viewArray.length; i++)
         {
             let view = viewArray[i];
-            if(view.class == 'RelativeLayout'
-                && view.children
-                && view.children.length == 1)
+            if('RelativeLayout' == view.class && view.children && 1 == view.children.length)
             {
                 var textView = view.children[0];
                 if(textView.class == 'TextView' && !textView.background)
                 {
                     for(var key in textView)
                     {
-                        if("layout_marginTop" == key
-                        || "layout_marginLeft" == key
-                        || "layout_width" == key
-                        || "layout_height" == key)
+                        if("layout_marginTop" == key || "layout_marginLeft" == key
+                            || "layout_width" == key || "layout_height" == key)
                         {
-
                         }
                         else
                         {
@@ -540,6 +541,8 @@ function startRun() {
                                         - (textView.layout_height).toFloatValue()
                                         - (textView.layout_marginTop).toFloatValue()
                                     ).toDimension();
+
+                    //删除background再添加，只是为了序列化时，顺序刚好可以生成在后面去。
                     let tempBg = view.background;
                     delete view.background;
                     view.background = tempBg;
@@ -574,9 +577,27 @@ function startRun() {
         return false;
     }
 
+    //将375宽度 修改为  match_parent
+    function adjustScreen_375(viewArray)
+    {
+        viewArray.forEach(view =>{
+            if(view.layout_width.toFloatValue() == 375)
+            {
+                view.layout_width = "match_parent"
+            }
+            adjustScreen_375(view.children || [])
+        })
+    }
+
     function wrapContentText(viewArray)
     {
         megerTextViewBackground(viewArray);
+
+        if(!config || !config.doNotAdjust375)
+        {
+            adjustScreen_375(viewArray);
+        }
+
         viewArray.forEach(view =>{
             if("TextView" == view.class)
             {
@@ -589,6 +610,7 @@ function startRun() {
             }
         })
     }
+
     if(window.location.href.indexOf('https://lanhuapp.com/web/#/item/board/detail') < 0) {
         alert("请进入详情页 再尝试操作")
     } else {
