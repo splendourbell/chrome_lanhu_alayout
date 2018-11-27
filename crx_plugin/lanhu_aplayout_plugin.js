@@ -99,6 +99,9 @@ function startRun(config) {
         });
 
         netestViews(viewArray);
+        megerTextViewBackground(viewArray);
+        adjust_centerVertical(viewArray);
+        adjust_layout_alignParentRight(viewArray);
         wrapContentText(viewArray);
 
         var container = {
@@ -129,10 +132,10 @@ function startRun(config) {
     function createView(info)
     {
         var viewObj = {};
-        if(info.name)
-        {
-            viewObj.id = info.name;
-        }
+        // if(info.name)
+        // {
+        //     viewObj.id = info.name;
+        // }
 
         switch(info.type)
         {
@@ -356,24 +359,6 @@ function startRun(config) {
                 }
             }
         }
-                //             "angle": "270",
-                //             "centerX":"0.5",
-                //             "centerY":"0.5",
-                var jj = {
-                    "type": "gradient",
-                    "gradient": {
-                        "type": "linear",
-
-                        "from": {
-                                "x": 0.5,
-                                "y": 1
-                            },
-                        "to": {
-                                "x": 0.4999999999999999,
-                                "y": 0.026395411849710948
-                            }
-                        }
-                    }
     }
 
     function getShapeStrokeChild(borders)
@@ -577,6 +562,58 @@ function startRun(config) {
         return false;
     }
 
+
+    function adjust_centerVertical(viewArray)
+    {
+        viewArray.forEach(view =>{
+            var children = view.children || [];
+            for(var i=0, len=children.length; i<len; i++)
+            {
+                if(view.layout_height)
+                {
+                    var parentHeight = view.layout_height.toFloatValue();
+                    children[i].layout_marginTop = children[i].layout_marginTop || "0dp";
+                    if(parentHeight > 0 && children[i].layout_height && children[i].layout_height.toFloatValue() > 0)
+                    {
+                        var layout_marginBottom = parentHeight - children[i].layout_height.toFloatValue() - children[i].layout_marginTop.toFloatValue();
+                        if( Math.abs(layout_marginBottom - children[i].layout_marginTop.toFloatValue()) <= 2 )
+                        {
+                            delete children[i].layout_marginTop;
+                            children[i].layout_centerVertical = "true";
+                        }
+                    }
+                }
+            }
+            adjust_centerVertical(children);
+        });
+    }
+
+    function adjust_layout_alignParentRight(viewArray)
+    {
+        viewArray.forEach(view =>{
+            var children = view.children || [];
+            for(var i=0, len=children.length; i<len; i++)
+            {
+                if(view.layout_width)
+                {
+                    var parentWidth = view.layout_width.toFloatValue();
+                    children[i].layout_marginLeft = children[i].layout_marginLeft || "0dp";
+                    if(parentWidth > 0 && children[i].layout_width && children[i].layout_width.toFloatValue() > 0)
+                    {
+                        var layout_marginRight = parentWidth - children[i].layout_width.toFloatValue() - children[i].layout_marginLeft.toFloatValue();
+                        if( children[i].layout_marginLeft.toFloatValue() >  parentWidth / 2 )
+                        {
+                            delete children[i].layout_marginLeft;
+                            children[i].layout_marginRight = layout_marginRight.toDimension();
+                            children[i].layout_alignParentRight = "true";
+                        }
+                    }
+                }
+            }
+            adjust_layout_alignParentRight(children);
+        });
+    }
+
     //将375宽度 修改为  match_parent
     function adjustScreen_375(viewArray)
     {
@@ -591,8 +628,6 @@ function startRun(config) {
 
     function wrapContentText(viewArray)
     {
-        megerTextViewBackground(viewArray);
-
         if(!config || !config.doNotAdjust375)
         {
             adjustScreen_375(viewArray);
@@ -603,6 +638,8 @@ function startRun(config) {
             {
                 view.layout_width = "wrap_content";
                 view.layout_height = "wrap_content";
+                view.lines = "1";
+                view.ellipsize = "end";
             }
             else
             {
