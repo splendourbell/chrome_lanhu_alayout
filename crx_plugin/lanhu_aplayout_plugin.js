@@ -102,7 +102,10 @@ function startRun(config) {
         megerTextViewBackground(viewArray);
         adjust_centerVertical(viewArray);
         adjust_layout_alignParentRight(viewArray);
+        adjust_match_parent(viewArray, 375);
         wrapContentText(viewArray);
+        adjust_sort_and_zeroValue(viewArray);
+        remove_status_bar(viewArray);
 
         var container = {
             "class" : "RelativeLayout",
@@ -132,10 +135,10 @@ function startRun(config) {
     function createView(info)
     {
         var viewObj = {};
-        // if(info.name)
-        // {
-        //     viewObj.id = info.name;
-        // }
+        if(info.name)
+        {
+            viewObj.id = info.name;
+        }
 
         switch(info.type)
         {
@@ -526,11 +529,6 @@ function startRun(config) {
                                         - (textView.layout_height).toFloatValue()
                                         - (textView.layout_marginTop).toFloatValue()
                                     ).toDimension();
-
-                    //删除background再添加，只是为了序列化时，顺序刚好可以生成在后面去。
-                    let tempBg = view.background;
-                    delete view.background;
-                    view.background = tempBg;
                     delete view.children;
                 }
             }
@@ -562,7 +560,7 @@ function startRun(config) {
         return false;
     }
 
-
+    //将上下margin相等值控制，设置为垂直居中
     function adjust_centerVertical(viewArray)
     {
         viewArray.forEach(view =>{
@@ -588,6 +586,7 @@ function startRun(config) {
         });
     }
 
+    //将靠右的控制，调整为右对齐方式
     function adjust_layout_alignParentRight(viewArray)
     {
         viewArray.forEach(view =>{
@@ -614,6 +613,37 @@ function startRun(config) {
         });
     }
 
+    //将宽度+margin 与父控件相等的控件设置为 match_parent
+    function adjust_match_parent(viewArray, parentWidth)
+    {
+        viewArray.forEach(view => {
+            var children = view.children || [];
+            view.layout_width = view.layout_width || "0dp";
+            adjust_match_parent(children, view.layout_width.toFloatValue());
+            if(parentWidth > 0 
+                && !view.layout_marginRight 
+                && view.layout_width && view.layout_width.toFloatValue() > 0)
+            {
+                var viewFullWidth = view.layout_marginLeft.toFloatValue()*2 + view.layout_width.toFloatValue();
+                if(Math.abs(viewFullWidth - parentWidth) <= 1)
+                {
+                    if("TextView" == view.class)
+                    {
+                        view.layout_marginLeft = "0dp";
+                        view.layout_width = "match_parent";
+                        view.layout_marginRight = view.layout_marginLeft;
+                        view.gravity = "center";
+                    }
+                    else
+                    {
+                        view.layout_width = "match_parent";
+                        view.layout_marginRight = view.layout_marginLeft;
+                    }
+                }
+            }   
+        });
+    }
+
     //将375宽度 修改为  match_parent
     function adjustScreen_375(viewArray)
     {
@@ -636,10 +666,14 @@ function startRun(config) {
         viewArray.forEach(view =>{
             if("TextView" == view.class)
             {
-                view.layout_width = "wrap_content";
-                view.layout_height = "wrap_content";
                 view.lines = "1";
                 view.ellipsize = "end";
+                view.layout_height = "wrap_content";
+
+                if(view.layout_width != "match_parent")
+                {
+                    view.layout_width = "wrap_content";
+                }
             }
             else
             {
@@ -647,6 +681,64 @@ function startRun(config) {
             }
         })
     }
+
+    function adjust_sort_and_zeroValue(viewArray)
+    {
+        viewArray.forEach(view => {
+            var children = view.children || [];
+            adjust_sort_and_zeroValue(children);
+            
+            view.background = view.background;
+            view.children = view.children;
+            if(view.layout_marginLeft && view.layout_marginLeft.toFloatValue() == 0)
+            {
+                delete view.layout_marginLeft;
+            }
+            if(view.layout_marginRight && view.layout_marginRight.toFloatValue() == 0)
+            {
+                delete view.layout_marginRight;
+            }
+
+            //删除再添加，只是为了序列化时
+            let tempBg = view.background;
+            delete view.background;
+            view.background = tempBg;
+
+            let tempChildren = view.children;
+            delete view.children;
+            view.children = tempChildren;
+        })
+    }
+
+    function remove_status_bar(viewArray)
+    {
+        var count = 0;
+        for(var len=viewArray.length, i=len-1; i >= 0; i--)
+        {
+            var view = viewArray[i];
+            if(view.id)
+            {
+                var idStr = view.id.toLowerCase();
+                idStr = idStr.replace(/ /g, "");
+                if(idStr.indexOf("mobilesignal") >= 0
+                || idStr.indexOf("wi-fi") >= 0
+                || idStr.indexOf("100%") >= 0)
+                {
+                    count++;
+                }
+            }
+            if(remove_status_bar(view.children || []))
+            {
+                delete view.children;
+            }
+            delete view.id;
+        }
+        if(count >= 2)
+        {
+            return true;
+        }
+    }
+
 
     if(window.location.href.indexOf('https://lanhuapp.com/web/#/item/board/detail') < 0) {
         alert("请进入详情页 再尝试操作")
