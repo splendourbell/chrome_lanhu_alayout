@@ -674,6 +674,16 @@ function startRun(config) {
                 {
                     view.layout_width = "wrap_content";
                 }
+
+                if(view.layout_centerVertical == "true"
+                && view.layout_height == "wrap_content")
+                {
+                    view.layout_height = "match_parent";
+                    if(view.gravity != "center")
+                    {
+                        view.gravity = "center|left";
+                    }
+                }
             }
             else
             {
@@ -729,9 +739,12 @@ function startRun(config) {
             }
             if(remove_status_bar(view.children || []))
             {
-                delete view.children;
+                viewArray.splice(i,1);
             }
-            delete view.id;
+            else
+            {
+                delete view.id;
+            }
         }
         if(count >= 2)
         {
