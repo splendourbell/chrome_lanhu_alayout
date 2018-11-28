@@ -216,7 +216,7 @@ function startRun(config) {
 
         if(Array.isArray(info.fills))
         {
-            shapeSolid = getShapeSolidChild(info.fills);
+            shapeSolid = getShapeSolidChild(info.fills, info.opacity);
             if(shapeSolid)
             {
                 background.children.push(shapeSolid);
@@ -301,7 +301,7 @@ function startRun(config) {
     }
 
     //背景色解析
-    function getShapeSolidChild(fills)
+    function getShapeSolidChild(fills, opacity)
     {
         for(var i=0; i < fills.length; i++)
         {
@@ -311,7 +311,7 @@ function startRun(config) {
                 let colorObj = {
                     "class": "solid"
                 }
-                colorObj.color = toHexColor(fillObj.color);
+                colorObj.color = toHexColor(fillObj.color, opacity);
                 return colorObj;
             }
         }
@@ -398,7 +398,7 @@ function startRun(config) {
         }
     }
 
-    function toHexColor(colorObj)
+    function toHexColor(colorObj, opacity)
     {
         let hexFormat = (hexStr)=>{
             if(hexStr.length < 2) {
@@ -413,6 +413,12 @@ function startRun(config) {
         var g = hexFormat(colorObj.g.toString(16));
         var b = hexFormat(colorObj.b.toString(16));
         colorFormat = r+g+b;
+
+        if(opacity != undefined && opacity >=0 && opacity <= 100
+            && (colorObj.a == 1 || !colorObj.a))
+        {
+            colorObj.a = opacity / 100;
+        }
         if(colorObj.a != 1)
         {
             var a = hexFormat(Math.round(colorObj.a*255).toString(16));
