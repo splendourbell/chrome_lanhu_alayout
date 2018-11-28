@@ -92,10 +92,14 @@ function startRun(config) {
     function genlayout(jsonobject)
     {
         let infos = jsonobject.info;
-        let viewArray = infos.map((info, index) => {
-            var viewObj = parseView(info);
-            viewObj.__sortIndex = index;
-            return viewObj;
+        let viewArray = [];
+        infos.forEach((info, index) => {
+            if(!info.top || info.top <= 667)
+            {
+                var viewObj = parseView(info);
+                viewObj.__sortIndex = index;
+                viewArray.push(viewObj);
+            }
         });
 
         netestViews(viewArray);
@@ -112,6 +116,16 @@ function startRun(config) {
             "layout_width" : "match_parent",
             "layout_height" : "match_parent",
             children : viewArray
+        }
+
+        if(viewArray.length == 1)
+        {
+            container = viewArray[0];
+        }
+
+        if(container.layout_height.toFloatValue() == 667)
+        {
+            container.layout_height = "match_parent";
         }
 
         document.MyLayoutData = JSON.stringify(container, null, 4);
@@ -707,6 +721,10 @@ function startRun(config) {
             if(view.layout_marginRight && view.layout_marginRight.toFloatValue() == 0)
             {
                 delete view.layout_marginRight;
+            }
+            if(view.layout_marginTop && view.layout_marginTop.toFloatValue() == 0)
+            {
+                delete view.layout_marginTop;
             }
 
             //删除再添加，只是为了序列化时
