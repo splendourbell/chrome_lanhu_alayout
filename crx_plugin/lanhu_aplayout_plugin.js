@@ -104,6 +104,7 @@ function startRun(config) {
 
         netestViews(viewArray);
         megerTextViewBackground(viewArray);
+        sortChildrenByMarginLeft(viewArray);
         adjust_centerVertical(viewArray);
         adjust_layout_alignParentRight(viewArray);
         adjust_match_parent(viewArray, 375);
@@ -154,21 +155,21 @@ function startRun(config) {
             viewObj.id = info.name;
         }
 
-        switch(info.type)
+        if(info.type == "text")
         {
-            case "text":
-                viewObj.class = "TextView";
-            break;
-
-            case "bitmap":
-            case "slice":
-                viewObj.class = "ImageView";
-            break;
-
-            default:
-                viewObj.class = "RelativeLayout";
-            break;
+            viewObj.class = "TextView";
         }
+        else if(info.type == "bitmap" 
+            || info.type == "slice"
+            || (info.type == "shape" && info.image))
+        {
+            viewObj.class = "ImageView";
+        }
+        else
+        {
+            viewObj.class = "RelativeLayout";
+        }
+
         return viewObj;
     }
 
@@ -204,6 +205,25 @@ function startRun(config) {
         var shapeShadow = null;
         var shapeStroke = null;
         var shapeGradient = null;
+
+        if(info.type == 'shape' && info.image && info.image.svg)
+        {
+            if(info.image.svg.indexOf('<circle') > 0)
+            {
+                background.children.push(
+                    {
+                        "class": "corners",
+                        "radius": "1000dp"
+                    }
+                )
+                background.children.push(
+                    {
+                        "class":"solid",
+                        "color":"#F00"
+                    }
+                )
+            }
+        }
 
         if(Array.isArray(info.radius))
         {
@@ -712,6 +732,28 @@ function startRun(config) {
         })
     }
 
+    function sortChildrenByMarginLeft(viewArray)
+    {
+        viewArray.sort((viewA, viewB) => {
+            if(viewA.layout_marginLeft && viewB.layout_marginLeft)
+            {
+                return viewA.layout_marginLeft.toFloatValue() - viewB.layout_marginLeft.toFloatValue()
+            }
+            else if(viewA.layout_marginLeft)
+            {
+                return -1;
+            }
+            else
+            {
+                return 1;
+            }
+        });
+
+        viewArray.forEach(view => {
+            sortChildrenByMarginLeft(view.children || [])
+        });
+    }
+
     function adjust_sort_and_zeroValue(viewArray)
     {
         viewArray.forEach(view => {
@@ -720,18 +762,64 @@ function startRun(config) {
             
             view.background = view.background;
             view.children = view.children;
-            if(view.layout_marginLeft && view.layout_marginLeft.toFloatValue() == 0)
+
+            if(view.layout_marginLeft && view.layout_marginLeft.toFloatValue() == 0 
+                && (!view.layout_marginRight || view.layout_width == 'match_parent') )
             {
                 delete view.layout_marginLeft;
             }
-            if(view.layout_marginRight && view.layout_marginRight.toFloatValue() == 0)
+
+            if(view.layout_marginRight && view.layout_marginRight.toFloatValue() == 0 
+                && (!view.layout_marginLeft || view.layout_width == 'match_parent'))
             {
                 delete view.layout_marginRight;
             }
-            if(view.layout_marginTop && view.layout_marginTop.toFloatValue() == 0)
+
+            if(view.layout_marginTop && view.layout_marginTop.toFloatValue() == 0 
+                && (!view.layout_marginBottom || view.layout_height == 'match_parent') )
             {
                 delete view.layout_marginTop;
             }
+
+            if(view.layout_marginBottom && view.layout_marginBottom.toFloatValue() == 0 
+                && (!view.layout_marginTop || view.layout_height == 'match_parent') )
+            {
+                delete view.layout_marginBottom;
+            }
+
+            var keys = Object.keys(view);
+            keys.sort( (a, b)=> { 
+                if(a.startsWith('layout') && !b.startsWith('layout'))
+                {
+                    return -1;
+                }
+
+                if(b.startsWith('layout') && !a.startsWith('layout'))
+                {
+                    return 1;
+                }
+
+                return  a.localeCompare(b)} 
+            );
+            
+            keys = keys.filter((v)=>{ 
+                return ( v != 'class' 
+                    && v != 'layout_width'
+                    && v != 'layout_height' )
+            });
+
+            keys = ['class', 'layout_width', 'layout_height', ...keys];
+
+            keys.forEach(key => {
+                var tmpValue = view[key];
+                delete view[key];
+                if(tmpValue)
+                {
+                    view[key] = tmpValue;
+                }
+            });
+
+
 
             //删除再添加，只是为了序列化时
             let tempBg = view.background;
@@ -743,6 +831,8 @@ function startRun(config) {
             view.children = tempChildren;
         })
     }
+
+
 
     function remove_status_bar(viewArray)
     {
