@@ -138,9 +138,14 @@ function startRun(config) {
         let viewObj = createView(info);
         parseRect(viewObj, info);
         let background = getBackground(info);
+        background = guessCircelBackground(info, background);
         if(background)
         {
             viewObj.background = background;
+        }
+        else
+        {
+
         }
 
         parseStylesForTextView(viewObj, info);
@@ -189,6 +194,57 @@ function startRun(config) {
         }
         viewObj.layout_width = (viewObj.layout_width || 0).toDimension();
         viewObj.layout_height = (viewObj.layout_height || 0).toDimension();
+    }
+
+    function guessCircelBackground(info, background)
+    {
+        if(info.type == 'shape' 
+            && info.name && info.name.startsWith('Oval'))
+        {
+            if(typeof background === 'string')
+            {
+                background = {
+                    "class": "shape",
+                    "shape": "rectangle",
+                    "children": [
+                        {
+                            "class":"solid",
+                            "color":background
+                        }
+                    ]
+                }
+            }
+
+            background = background || {
+                "class": "shape",
+                "shape": "rectangle",
+                "children": [
+                ]
+            }
+            
+
+            var hasCorners = false;
+            for(var i=0; i<background.children.length; i++)
+            {
+                var child = background.children[i];
+                if(child.class == 'corners')
+                {
+                    hasCorners = true;
+                    break;
+                }
+            }
+
+            if(!hasCorners)
+            {
+                background.children.push(
+                    {
+                        "class": "corners",
+                        "radius": "1000dp"
+                    }
+                )
+            }
+        }
+        return background;
     }
 
     function getBackground(info)
@@ -497,7 +553,6 @@ function startRun(config) {
     function netestViews(viewArray)
     {
         let newViewArray = viewArray.slice(0);
-        console.log(JSON.stringify(newViewArray));
         newViewArray = newViewArray.sort((viewA, viewB) => {
             return viewA.layout_width.toFloatValue() * viewA.layout_height.toFloatValue() - viewB.layout_width.toFloatValue()
                 * viewB.layout_height.toFloatValue();
@@ -737,7 +792,22 @@ function startRun(config) {
         viewArray.sort((viewA, viewB) => {
             if(viewA.layout_marginLeft && viewB.layout_marginLeft)
             {
-                return viewA.layout_marginLeft.toFloatValue() - viewB.layout_marginLeft.toFloatValue()
+                let cmp = viewA.layout_marginLeft.toFloatValue() - viewB.layout_marginLeft.toFloatValue()
+                if(cmp == 0)
+                {
+                    if(viewA.layout_marginTop && viewB.layout_marginTop)
+                    {
+                        return viewA.layout_marginTop.toFloatValue() - viewB.layout_marginTop.toFloatValue()
+                    }
+                    else if(viewA.layout_marginTop)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return 1;
+                    }
+                }
             }
             else if(viewA.layout_marginLeft)
             {
