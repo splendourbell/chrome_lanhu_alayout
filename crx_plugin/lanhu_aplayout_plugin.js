@@ -164,7 +164,7 @@ function startRun(config) {
         {
             viewObj.class = "TextView";
         }
-        else if(info.type == "bitmap" 
+        else if(info.type == "bitmap"
             || info.type == "slice"
             || (info.type == "shape" && info.image))
         {
@@ -198,7 +198,7 @@ function startRun(config) {
 
     function guessCircelBackground(info, background)
     {
-        if(info.type == 'shape' 
+        if(info.type == 'shape'
             && info.name && info.name.startsWith('Oval'))
         {
             if(typeof background === 'string')
@@ -221,7 +221,7 @@ function startRun(config) {
                 "children": [
                 ]
             }
-            
+
 
             var hasCorners = false;
             for(var i=0; i<background.children.length; i++)
@@ -445,6 +445,7 @@ function startRun(config) {
                     }
                     else
                     {
+                        return;
                         alert("not support type : " + gradient.type);
                     }
                     colorObj.color = toHexColor(fillObj.color);
@@ -715,8 +716,8 @@ function startRun(config) {
             var children = view.children || [];
             view.layout_width = view.layout_width || "0dp";
             adjust_match_parent(children, view.layout_width.toFloatValue());
-            if(parentWidth > 0 
-                && !view.layout_marginRight 
+            if(parentWidth > 0
+                && !view.layout_marginRight
                 && view.layout_width && view.layout_width.toFloatValue() > 0)
             {
                 var viewFullWidth = view.layout_marginLeft.toFloatValue()*2 + view.layout_width.toFloatValue();
@@ -735,7 +736,7 @@ function startRun(config) {
                         view.layout_marginRight = view.layout_marginLeft;
                     }
                 }
-            }   
+            }
         });
     }
 
@@ -829,36 +830,36 @@ function startRun(config) {
         viewArray.forEach(view => {
             var children = view.children || [];
             adjust_sort_and_zeroValue(children);
-            
+
             view.background = view.background;
             view.children = view.children;
 
-            if(view.layout_marginLeft && view.layout_marginLeft.toFloatValue() == 0 
+            if(view.layout_marginLeft && view.layout_marginLeft.toFloatValue() == 0
                 && (!view.layout_marginRight || view.layout_width == 'match_parent') )
             {
                 delete view.layout_marginLeft;
             }
 
-            if(view.layout_marginRight && view.layout_marginRight.toFloatValue() == 0 
+            if(view.layout_marginRight && view.layout_marginRight.toFloatValue() == 0
                 && (!view.layout_marginLeft || view.layout_width == 'match_parent'))
             {
                 delete view.layout_marginRight;
             }
 
-            if(view.layout_marginTop && view.layout_marginTop.toFloatValue() == 0 
+            if(view.layout_marginTop && view.layout_marginTop.toFloatValue() == 0
                 && (!view.layout_marginBottom || view.layout_height == 'match_parent') )
             {
                 delete view.layout_marginTop;
             }
 
-            if(view.layout_marginBottom && view.layout_marginBottom.toFloatValue() == 0 
+            if(view.layout_marginBottom && view.layout_marginBottom.toFloatValue() == 0
                 && (!view.layout_marginTop || view.layout_height == 'match_parent') )
             {
                 delete view.layout_marginBottom;
             }
 
             var keys = Object.keys(view);
-            keys.sort( (a, b)=> { 
+            keys.sort( (a, b)=> {
                 if(a.startsWith('layout') && !b.startsWith('layout'))
                 {
                     return -1;
@@ -869,11 +870,11 @@ function startRun(config) {
                     return 1;
                 }
 
-                return  a.localeCompare(b)} 
+                return  a.localeCompare(b)}
             );
-            
-            keys = keys.filter((v)=>{ 
-                return ( v != 'class' 
+
+            keys = keys.filter((v)=>{
+                return ( v != 'class'
                     && v != 'layout_width'
                     && v != 'layout_height' )
             });
@@ -937,7 +938,7 @@ function startRun(config) {
     }
 
 
-    if(window.location.href.indexOf('https://lanhuapp.com/web/#/item/board/detail') < 0) {
+    if(window.location.href.indexOf('lanhuapp.com/web/#/item/project/board/detail') < 0) {
         alert("请进入详情页 再尝试操作")
     } else {
         getLayoutData();
