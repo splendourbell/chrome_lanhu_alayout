@@ -49,6 +49,110 @@ Number.prototype.toDimension = function () {
 
 function startRun(config) {
     //拼接数据地址
+
+    function hookStart(){
+
+        if(!document.getElementById("cllcopybutton")){
+            document.querySelector('div.annotation_container').innerHTML = document.querySelector('div.annotation_container').innerHTML + '<p><button id="cllcopybutton">点击复制</button></p>';
+        }
+        function MyCllCopy(text)
+        {
+           function handler(event) {
+               event.clipboardData.setData('text/plain', text);
+               document.removeEventListener('copy', handler, true);
+               event.preventDefault();
+               document.getElementById("cllcopybutton").innerText = "已复制";
+               setTimeout(()=>{
+                   document.getElementById("cllcopybutton").innerText = "点击复制";
+               }, 2000);
+           }
+           document.addEventListener('copy', handler, true);
+           document.execCommand('copy');
+        }
+
+       document.getElementById('cllcopybutton').onclick=function(){
+
+           var url = getInfoUrl();
+           if(url)
+           {
+               axios.get(url).then(
+                   function (response) {
+                       var url = response.data.result.versions[0].json_url;
+                       console.log(url);
+                       axios.get(url).then(function (response) {
+                           let result = genlayout(response.data, true)
+                           MyCllCopy( JSON.stringify(result, null, 4) );
+                       })
+                       // .catch(function (error) {
+                       //     alert(error);
+                       // });
+                   })
+                   // .catch(function (error) {
+                   //     alert(error);
+                   // });
+           }
+
+
+       }
+    }
+
+    function filterCurData(allData){
+
+        let arr = document.querySelectorAll('div.annotation_container_b div.annotation_item li');
+        let data = {};
+        for(let i=0; i<arr.length; i++){
+            let type = (arr[i].querySelector('div.item_title')||{}).innerText;
+            switch(type){
+                case '图层':
+                {
+                    data.name = arr[i].querySelector('div.layer_name').innerText;
+                    break;
+                }
+
+                case '位置':
+                {
+                    let pos = arr[i].querySelectorAll('div.item_two div.two');
+                    data.left = parseInt(pos[0].innerText);
+                    data.top = parseInt(pos[1].innerText);
+                    break;
+                }
+
+                case '大小':
+                {
+                    let pos = arr[i].querySelectorAll('div.item_two div.two');
+                    data.width = parseInt(pos[0].innerText);
+                    data.height = parseInt(pos[1].innerText);
+                    break;
+                }
+
+            }
+        }
+
+        return searchItem(allData, data)
+    }
+
+    function searchItem(allData, match){
+
+        let unikey = [match.left, match.top, match.width, match.height, match.name].join('-');
+        allData = allData || [];
+        for(let i=0; i<allData.length; i++){
+            let curData = allData[i];
+            if(curData.unikey == unikey)
+            {
+                return [curData];
+            }
+
+            let matched = searchItem(curData.children, match);
+            if(matched){
+                return [matched];
+            }
+        }
+    }
+
+    hookStart();
+
+
+
     function getInfoUrl()
     {
         var hashstr = window.location.hash;
@@ -89,7 +193,7 @@ function startRun(config) {
     }
 
     //解析布局数据，生成view
-    function genlayout(jsonobject)
+    function genlayout(jsonobject, onlyReturn)
     {
         let infos = jsonobject.info;
         let viewArray = [];
@@ -103,6 +207,9 @@ function startRun(config) {
         });
 
         netestViews(viewArray);
+        if(onlyReturn){
+            viewArray = filterCurData(viewArray);
+        }
         megerTextViewBackground(viewArray);
         sortChildrenByMarginLeft(viewArray);
         adjust_centerVertical(viewArray);
@@ -129,7 +236,9 @@ function startRun(config) {
             container.layout_height = "match_parent";
         }
 
-        document.MyLayoutData = JSON.stringify(container, null, 4);
+        if(!onlyReturn){
+            document.MyLayoutData = JSON.stringify(container, null, 4);
+        }
         return container;
     }
 
@@ -175,6 +284,7 @@ function startRun(config) {
             viewObj.class = "RelativeLayout";
         }
 
+        viewObj.unikey = [info.left, info.top, info.width, info.height, info.name].join('-');
         return viewObj;
     }
 
@@ -929,6 +1039,7 @@ function startRun(config) {
             else
             {
                 delete view.id;
+                delete view.unikey;
             }
         }
         if(count >= 2)
