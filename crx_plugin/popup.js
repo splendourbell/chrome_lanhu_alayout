@@ -12,15 +12,36 @@
     document.execCommand('copy');
  }
 
+ function MyCopySelected(text)
+ {
+    function handler(event) {
+        event.clipboardData.setData('text/plain', text);
+        document.removeEventListener('copy', handler, true);
+        event.preventDefault();
+        document.getElementById("mySelectedButton").innerText = "已复制";
+    }
+    document.addEventListener('copy', handler, true);
+    document.execCommand('copy');
+ }
+
 var result;
 document.getElementById('mybutton').onclick=function(){
     if(result)
     {
-        MyCopy(result);
+        MyCopy(result.data);
     }
 }
 
-document.getElementById("mybutton").disabled = true; 
+document.getElementById('mySelectedButton').onclick=function(){
+    if(result)
+    {
+        MyCopySelected(result.selectedData);
+    }
+}
+
+
+document.getElementById("mybutton").disabled = true;
+document.getElementById('mySelectedButton').disabled = true;
 
 function getLayoutedData()
 {
@@ -31,6 +52,7 @@ function getLayoutedData()
         {
             result = results[0];
             document.getElementById("mybutton").disabled = false;
+            document.getElementById('mySelectedButton').disabled = false;
         }
     });
 }
@@ -39,7 +61,7 @@ function startCheck()
 {
     setTimeout(()=>{
         getLayoutedData();
-        if(!result) 
+        if(!result)
             startCheck();
         else {
             document.getElementById("state").innerText = "已完成，请点击复制";
@@ -52,7 +74,7 @@ function startTask()
     chrome.tabs.executeScript({
         code: 'startRun()'
     }, function(results) {
-  
+
     });
     startCheck();
 }

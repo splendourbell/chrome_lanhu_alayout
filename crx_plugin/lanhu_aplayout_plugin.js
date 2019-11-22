@@ -50,51 +50,45 @@ Number.prototype.toDimension = function () {
 function startRun(config) {
     //拼接数据地址
 
-    function hookStart(){
-
-        if(!document.getElementById("cllcopybutton")){
-            document.querySelector('div.annotation_container').innerHTML = document.querySelector('div.annotation_container').innerHTML + '<p><button id="cllcopybutton">点击复制</button></p>';
-        }
-        function MyCllCopy(text)
-        {
-           function handler(event) {
-               event.clipboardData.setData('text/plain', text);
-               document.removeEventListener('copy', handler, true);
-               event.preventDefault();
-               document.getElementById("cllcopybutton").innerText = "已复制";
-               setTimeout(()=>{
-                   document.getElementById("cllcopybutton").innerText = "点击复制";
-               }, 2000);
-           }
-           document.addEventListener('copy', handler, true);
-           document.execCommand('copy');
-        }
-
-       document.getElementById('cllcopybutton').onclick=function(){
-
-           var url = getInfoUrl();
-           if(url)
-           {
-               axios.get(url).then(
-                   function (response) {
-                       var url = response.data.result.versions[0].json_url;
-                       console.log(url);
-                       axios.get(url).then(function (response) {
-                           let result = genlayout(response.data, true)
-                           MyCllCopy( JSON.stringify(result, null, 4) );
-                       })
-                       // .catch(function (error) {
-                       //     alert(error);
-                       // });
-                   })
-                   // .catch(function (error) {
-                   //     alert(error);
-                   // });
-           }
-
-
-       }
-    }
+    // function hookStart(){
+    //
+    //     if(!document.getElementById("cllcopybutton")){
+    //         document.querySelector('div.annotation_container').innerHTML = document.querySelector('div.annotation_container').innerHTML + '<p><button id="cllcopybutton">点击复制</button></p>';
+    //     }
+    //     function MyCllCopy(text)
+    //     {
+    //        function handler(event) {
+    //            event.clipboardData.setData('text/plain', text);
+    //            document.removeEventListener('copy', handler, true);
+    //            event.preventDefault();
+    //            document.getElementById("cllcopybutton").innerText = "已复制";
+    //            setTimeout(()=>{
+    //                document.getElementById("cllcopybutton").innerText = "点击复制";
+    //            }, 2000);
+    //        }
+    //        document.addEventListener('copy', handler, true);
+    //        document.execCommand('copy');
+    //     }
+    //
+    //    document.getElementById('cllcopybutton').onclick=function(){
+    //
+    //        let result = genlayout(currentJsonData, true) || {}
+    //        if(result.layout_marginLeft >= 375){
+    //            delete result.layout_marginLeft;
+    //         }
+    //         delete result.layout_marginTop;
+    //
+    //        result = {
+    //            "class": "RelativeLayout",
+    //           "layout_width": "match_parent",
+    //             "layout_height": "wrap_content",
+    //             "background": "@color/blue",
+    //             "gravity": "center",
+    //             "children":[result]
+    //        }
+    //        MyCllCopy( JSON.stringify(result, null, 4) );
+    //    }
+    // }
 
     function filterCurData(allData){
 
@@ -137,19 +131,19 @@ function startRun(config) {
         allData = allData || [];
         for(let i=0; i<allData.length; i++){
             let curData = allData[i];
-            if(curData.unikey == unikey)
+            if(curData.unikey.trim() == unikey.trim())
             {
                 return [curData];
             }
 
             let matched = searchItem(curData.children, match);
             if(matched){
-                return [matched];
+                return matched;
             }
         }
     }
 
-    hookStart();
+    //hookStart();
 
 
 
@@ -173,6 +167,7 @@ function startRun(config) {
     function getLayoutData()
     {
         document.MyLayoutData = null;
+        document.MyLayoutDataSelected = null;
 
         var url = getInfoUrl();
         if(url)
@@ -183,6 +178,9 @@ function startRun(config) {
                     console.log(url);
                     axios.get(url).then(function (response) {
                         genlayout(response.data);
+                        if(document.querySelector('div.layer_select')){
+                            genlayout(response.data, true);
+                        }
                     }).catch(function (error) {
                         alert(error);
                     });
@@ -235,10 +233,26 @@ function startRun(config) {
         {
             container.layout_height = "match_parent";
         }
+        if(onlyReturn){
 
-        if(!onlyReturn){
+            if(container.layout_marginLeft >= 375){
+                delete container.layout_marginLeft;
+             }
+             delete container.layout_marginTop;
+
+            container = {
+                "class": "RelativeLayout",
+               "layout_width": "match_parent",
+                 "layout_height": "wrap_content",
+                 "background": "@color/blue",
+                 "gravity": "center",
+                 "children":[container]
+            }
+            document.MyLayoutDataSelected = JSON.stringify(container, null, 4);
+        } else {
             document.MyLayoutData = JSON.stringify(container, null, 4);
         }
+
         return container;
     }
 
@@ -835,7 +849,6 @@ function startRun(config) {
                 {
                     if("TextView" == view.class)
                     {
-                        view.layout_marginLeft = "0dp";
                         view.layout_width = "match_parent";
                         view.layout_marginRight = view.layout_marginLeft;
                         view.gravity = "center";
@@ -1058,6 +1071,9 @@ function startRun(config) {
 
 function getLayoutedData()
 {
-    return document.MyLayoutData;
+    if(document.MyLayoutData){
+        return {data:document.MyLayoutData, selectedData:document.MyLayoutDataSelected}
+    }
 }
+
 console.log("plugin alayout run");
