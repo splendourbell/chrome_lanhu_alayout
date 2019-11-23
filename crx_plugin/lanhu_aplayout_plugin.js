@@ -90,8 +90,7 @@ function startRun(config) {
     //    }
     // }
 
-    function filterCurData(allData){
-
+    function getSelectedUnikey(){
         let arr = document.querySelectorAll('div.annotation_container_b div.annotation_item li');
         let data = {};
         for(let i=0; i<arr.length; i++){
@@ -122,12 +121,18 @@ function startRun(config) {
             }
         }
 
-        return searchItem(allData, data)
+        let unikey = [data.left, data.top, data.width, data.height, data.name].join('-');
+        return unikey;
     }
 
-    function searchItem(allData, match){
+    function filterCurData(allData){
 
-        let unikey = [match.left, match.top, match.width, match.height, match.name].join('-');
+        let unikey = getSelectedUnikey();
+        return searchItem(allData, unikey)
+    }
+
+    function searchItem(allData, unikey){
+
         allData = allData || [];
         for(let i=0; i<allData.length; i++){
             let curData = allData[i];
@@ -136,7 +141,7 @@ function startRun(config) {
                 return [curData];
             }
 
-            let matched = searchItem(curData.children, match);
+            let matched = searchItem(curData.children, unikey);
             if(matched){
                 return matched;
             }
@@ -204,7 +209,11 @@ function startRun(config) {
             }
         });
 
-        netestViews(viewArray);
+        let filterKey;
+        if(onlyReturn){
+            filterKey = getSelectedUnikey()
+        }
+        netestViews(viewArray, filterKey);
         if(onlyReturn){
             viewArray = filterCurData(viewArray);
         }
@@ -675,8 +684,12 @@ function startRun(config) {
     }
 
     //通过生成的绝对坐标，按控制大小判断生成父子关系
-    function netestViews(viewArray)
+    function netestViews(viewArray, filterKey)
     {
+        let index = viewArray.findIndex((item) => item.unikey == filterKey);
+        if(index > 0){
+            viewArray = viewArray.slice(index-1);
+        }
         let newViewArray = viewArray.slice(0);
         newViewArray = newViewArray.sort((viewA, viewB) => {
             return viewA.layout_width.toFloatValue() * viewA.layout_height.toFloatValue() - viewB.layout_width.toFloatValue()
