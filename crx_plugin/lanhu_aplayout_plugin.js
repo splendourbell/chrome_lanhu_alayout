@@ -770,6 +770,10 @@ function startRun(config) {
 
     function containsView(bigView, smallView)
     {
+        if(smallView.__sortIndex < bigView.__sortIndex){
+            return false;
+        }
+
         if(bigView.class == "ViewGroup"
         || bigView.class == "RelativeLayout"
         || bigView.class == "LinearLayout"
