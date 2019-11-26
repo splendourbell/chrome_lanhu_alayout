@@ -249,14 +249,14 @@ function startRun(config) {
              }
              delete container.layout_marginTop;
 
-            container = {
-                "class": "RelativeLayout",
-               "layout_width": "match_parent",
-                 "layout_height": "wrap_content",
-                 "background": "@color/blue",
-                 "gravity": "center",
-                 "children":[container]
-            }
+            // container = {
+            //     "class": "RelativeLayout",
+            //    "layout_width": "match_parent",
+            //      "layout_height": "wrap_content",
+            //      "background": "@color/blue",
+            //      "gravity": "center",
+            //      "children":[container]
+            // }
             document.MyLayoutDataSelected = JSON.stringify(container, null, 4);
         } else {
             document.MyLayoutData = JSON.stringify(container, null, 4);
@@ -688,7 +688,7 @@ function startRun(config) {
     {
         let index = viewArray.findIndex((item) => item.unikey == filterKey);
         if(index > 0){
-            viewArray = viewArray.slice(index-1);
+            viewArray = viewArray.slice(index);
         }
         let newViewArray = viewArray.slice(0);
         newViewArray = newViewArray.sort((viewA, viewB) => {
@@ -751,12 +751,26 @@ function startRun(config) {
                     view.id = textView.id;
                     view.paddingTop = textView.layout_marginTop;
                     view.paddingLeft = textView.layout_marginLeft;
+
                     view.paddingRight = (
                                         view.layout_width.toFloatValue()
                                         - textView.layout_width.toFloatValue()
                                         - textView.layout_marginLeft.toFloatValue()
                                     ).toDimension();
 
+                    if( Math.abs(view.paddingRight.toFloatValue() - view.paddingLeft.toFloatValue()) <= 1){
+                        if(
+                            (textView.layout_width.toFloatValue()
+                            + (view.layout_marginLeft||"0dp").toFloatValue() * 2
+                            + (view.layout_marginRight||"0dp").toFloatValue()
+                            + view.paddingRight.toFloatValue()
+                            + view.paddingLeft.toFloatValue()) >= 374
+                        ){
+                            view.gravity = 'center';
+                            delete view.paddingLeft;
+                            delete view.paddingRight;
+                        }
+                    }
                     view.paddingBottom = (
                                         (view.layout_height).toFloatValue()
                                         - (textView.layout_height).toFloatValue()
@@ -764,6 +778,9 @@ function startRun(config) {
                                     ).toDimension();
                     delete view.children;
                 }
+            }
+            else {
+                megerTextViewBackground(view.children || []);
             }
         }
     }
@@ -853,7 +870,7 @@ function startRun(config) {
     //将宽度+margin 与父控件相等的控件设置为 match_parent
     function adjust_match_parent(viewArray, parentWidth)
     {
-        viewArray.forEach(view => {
+        viewArray.forEach((view, index) => {
             var children = view.children || [];
             view.layout_width = view.layout_width || "0dp";
             adjust_match_parent(children, view.layout_width.toFloatValue());
@@ -864,16 +881,32 @@ function startRun(config) {
                 var viewFullWidth = view.layout_marginLeft.toFloatValue()*2 + view.layout_width.toFloatValue();
                 if(Math.abs(viewFullWidth - parentWidth) <= 1)
                 {
-                    if("TextView" == view.class)
+                    if("TextView" == view.class && index != 0)
                     {
-                        view.layout_width = "match_parent";
-                        view.layout_marginRight = view.layout_marginLeft;
-                        view.gravity = "center";
+                        if(parseInt(view.textSize) * 2 < view.layout_height){
+                            view.lines = "0";
+                        } else {
+                            view.layout_marginLeft = "0dp";
+                            view.layout_width = "match_parent";
+                            view.layout_marginRight = view.layout_marginLeft;
+                            view.gravity = "center";
+                        }
                     }
                     else
                     {
                         view.layout_width = "match_parent";
                         view.layout_marginRight = view.layout_marginLeft;
+                    }
+                }
+                else if( Math.abs(view.layout_marginLeft.toFloatValue() + view.layout_width.toFloatValue() - parentWidth) <= 1){
+                    view.layout_width = "match_parent";
+                }
+                else {
+                    if("TextView" == view.class)
+                    {
+                        if(parseInt(view.textSize) * 2 < parseInt(view.layout_height)){
+                            view.lines = "0";
+                        }
                     }
                 }
             }
@@ -902,17 +935,19 @@ function startRun(config) {
         viewArray.forEach(view =>{
             if("TextView" == view.class)
             {
-                view.lines = "1";
-                view.ellipsize = "end";
-                view.layout_height = "wrap_content";
-
-                if(view.layout_width != "match_parent")
-                {
-                    view.layout_width = "wrap_content";
+                if("0" == view.lines){
+                    delete view.lines;
+                } else {
+                    view.lines = "1";
+                    if(view.layout_width != "match_parent")
+                    {
+                        view.layout_width = "wrap_content";
+                    }
                 }
 
-                if(view.layout_centerVertical == "true"
-                && view.layout_height == "wrap_content")
+                view.layout_height = "wrap_content";
+                view.ellipsize = "end";
+                if(view.layout_centerVertical == "true" && view.layout_height == "wrap_content")
                 {
                     view.layout_height = "match_parent";
                     if(view.gravity != "center")
